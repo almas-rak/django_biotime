@@ -1,8 +1,11 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
 
-class IndexView(TemplateView):
+class IndexView(LoginRequiredMixin, TemplateView):
     template_name = 'index.html'
+    login_url = 'login'
+    redirect_field_name = 'next'
     # model = Article
     # context_object_name = 'articles'
     # ordering = ('created_at',)
