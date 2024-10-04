@@ -26,6 +26,8 @@ USER_NAME_ZK = os.getenv('USER_NAME_ZK')
 USER_PASS_ZK = os.getenv('USER_PASS_ZK')
 BASE_URL_ZK = os.getenv('BASE_URL_ZK')
 
+# print(DB_HOST, DB_USER, DB_NAME, DB_PASS, DB_PORT)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'bootstrap5',
     "accounts",
     "web_app",
     "api",
