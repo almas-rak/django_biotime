@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% block title %}Отчёты{% endblock title %}
-{% block content %}
 
+{% block menu %}
+<li class="nav-item nav-link"><button class="btn btn-outline-success" id="exportButton">Экспорт в Excel</button></li>
+<li class="nav-item nav-link"><button class="btn btn-outline-success" id="submitCount" type="">Подсчёт</button></li>
+{% endblock menu %}
+
+
+{% block content %}
 <div id="tableContainer">
     <div class="progress" id="progressBarTable">
       </div>
@@ -12,5 +18,4 @@
         </tbody>
     </table>
 </div>
-
 {% endblock content %}
