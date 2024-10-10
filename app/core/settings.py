@@ -25,6 +25,9 @@ DB_NAME = os.getenv('DB_NAME')
 USER_NAME_ZK = os.getenv('USER_NAME_ZK')
 USER_PASS_ZK = os.getenv('USER_PASS_ZK')
 BASE_URL_ZK = os.getenv('BASE_URL_ZK')
+get_emp_url = os.getenv('get_emp_url')
+login_url = os.getenv("login_url")
+
 
 # print(DB_HOST, DB_USER, DB_NAME, DB_PASS, DB_PORT)
 
@@ -57,6 +60,7 @@ INSTALLED_APPS = [
     "accounts",
     "web_app",
     "api",
+    "zk_services",
 ]
 
 REST_FRAMEWORK = {
