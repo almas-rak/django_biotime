@@ -9,6 +9,9 @@ class ZkApiInteraction:
 
     def __init__(self):
         self.token = self.get_token()
+        self.headers = {"Content-Type": "application/json",
+                        "Authorization": self.token
+                        }
 
     def get_token(self):
         token = ZkToken.objects.get_or_none()
@@ -32,7 +35,6 @@ class ZkApiInteraction:
                 token.save()
                 return token
             else:
-                print(response["token"])
                 token = ZkToken.objects.create(
                     token=response["token"]
                 )
@@ -45,21 +47,21 @@ class ZkApiInteraction:
 
     def get_emp(self, user_pk: int):
         get_emp_url = f'{settings.BASE_URL_ZK}{settings.get_emp_url}'
-        headers = {"Content-Type": "application/json",
-                   "Authorization": ""
-                   }
-        while range(2):
-            if self.token:
-                headers["Authorization"] = f"Token {self.token.token}"
-                params = {"page_size": 100}
-                response = requests.get(url=get_emp_url, headers=headers, params=params)
+        if self.token:
+            params = {"page_size": 100}
+            response = requests.get(url=get_emp_url, headers=self.headers, params=params)
 
-                if response.ok:
-                    response = response.json()
-                    ZkRequest.objects.create(
-                        user_pk=user_pk,
-                        request=f"GET {get_emp_url}"
+            if response.ok:
+                response = response.json()
+                ZkRequest.objects.create(
+                    user_pk=user_pk,
+                    request=f"GET {get_emp_url}"
                     )
                 return response
             else:
-                self.get_token()
+                self.login_zk()
+
+    def get_report(self, ids, user):
+        headers = {"Content-Type": "application/json",
+                   "Authorization": ""
+                   }
