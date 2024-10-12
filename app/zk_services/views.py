@@ -10,7 +10,7 @@ class ZkApiInteraction:
     def __init__(self):
         self.token = self.get_token()
         self.headers = {"Content-Type": "application/json",
-                        "Authorization": self.token
+                        "Authorization": f"Token {self.token.token}"
                         }
 
     def get_token(self):
@@ -45,23 +45,51 @@ class ZkApiInteraction:
                 "description": f'{response.reason} Обратитесь к администратору'
             }
 
-    def get_emp(self, user_pk: int):
+    def refresh_token(self):
+        url = f"{settings.BASE_URL_ZK}/base/api/user_notifications/total/"
+        params = {"status": 0}
+        response = requests.get(url=url, headers=self.headers, params=params)
+        if response.ok:
+            return
+        else:
+            self.login_zk(token=self.token)
+
+    def record_in_db(self, request, user):
+        ZkRequest.objects.create(
+            user_pk=user,
+            request=request.url,
+            method=request.request.method,
+            status_code=request.status_code
+        )
+
+    def get_emp(self, user):
         get_emp_url = f'{settings.BASE_URL_ZK}{settings.get_emp_url}'
         if self.token:
             params = {"page_size": 100}
             response = requests.get(url=get_emp_url, headers=self.headers, params=params)
-
+            self.record_in_db(request=response, user=user)
             if response.ok:
                 response = response.json()
-                ZkRequest.objects.create(
-                    user_pk=user_pk,
-                    request=f"GET {get_emp_url}"
-                    )
                 return response
             else:
-                self.login_zk()
+                return {
+                    "status_code": response.status_code,
+                    "description": f'{response.reason} Обратитесь к администратору'
+                }
 
-    def get_report(self, ids, user):
-        headers = {"Content-Type": "application/json",
-                   "Authorization": ""
-                   }
+    def get_monthly_status_report(self, params, user):
+        url = f"{settings.BASE_URL_ZK}{settings.monthly_status_report_url}"
+        monthly_status_report = requests.get(
+            url=url,
+            headers=self.headers,
+            params=params,
+        )
+        self.record_in_db(request=monthly_status_report, user=user)
+        if monthly_status_report.ok:
+            monthly_status_report = monthly_status_report.json()
+            return monthly_status_report
+        else:
+            return {
+                "status_code": monthly_status_report.status_code,
+                "description": f'{monthly_status_report.reason} Обратитесь к администратору'
+            }
