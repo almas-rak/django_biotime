@@ -27,7 +27,8 @@ USER_PASS_ZK = os.getenv('USER_PASS_ZK')
 BASE_URL_ZK = os.getenv('BASE_URL_ZK')
 get_emp_url = os.getenv('get_emp_url')
 login_url = os.getenv("login_url")
-
+monthly_status_report_url = os.getenv("monthly_status_report_url")
+monthly_punch_report_url = os.getenv("monthly_punch_report_url")
 
 # print(DB_HOST, DB_USER, DB_NAME, DB_PASS, DB_PORT)
 
