@@ -10,11 +10,26 @@ class ZkRequest(models.Model):
         get_user_model(),
         on_delete=models.PROTECT,
     )
+
+    method = models.CharField(
+        verbose_name="Метод",
+        null=False,
+        blank=False
+
+    )
+
     request = models.CharField(
         verbose_name="Запрос",
         null=False,
         blank=False
     )
+
+    status_code = models.IntegerField(
+        verbose_name="Статус код",
+        null=False,
+        blank=False
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Дата и время создания"
