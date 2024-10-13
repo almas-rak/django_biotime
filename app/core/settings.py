@@ -29,6 +29,7 @@ get_emp_url = os.getenv('get_emp_url')
 login_url = os.getenv("login_url")
 monthly_status_report_url = os.getenv("monthly_status_report_url")
 monthly_punch_report_url = os.getenv("monthly_punch_report_url")
+life_search_url = os.getenv("life_search_url")
 
 # print(DB_HOST, DB_USER, DB_NAME, DB_PASS, DB_PORT)
 
@@ -66,7 +67,8 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'api.custom_auth.TokenFromCookieAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
 }
 

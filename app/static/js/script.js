@@ -74,15 +74,23 @@ document.getElementById('search-input').addEventListener('input', function() {
     const resultsContainer = document.getElementById('search-results');
 
     if (query.length > 0) { 
-        fetch(`/search?query=${query}`)
+        fetch(`/api/life_search/?employee_icontains=${query}`, {
+            credentials: 'include'
+        })
             .then(response => response.json())
             .then(data => {
                 resultsContainer.innerHTML = ''; // Очищаем предыдущие результаты
 
-                data.results.forEach(item => {
+                data.data.forEach(item => {
                     const div = document.createElement('div');
                     div.classList.add('search-result');
-                    div.textContent = item.first_name;
+                    const span = document.createElement('span');
+                    if (parseInt(item.emp_code) < 10) {
+                        span.textContent = `${item.emp_code}    ${item.first_name}`;
+                    }else if(parseInt(item.emp_code) < 100) {
+                        span.textContent = `${item.emp_code} ${item.first_name}`;
+                    }
+                    div.appendChild(span)
                     div.addEventListener('click', function() {
                         document.getElementById('search-input').value = item.first_name; // Заполняем поле ввода выбранным значением
                         search_id = item.id

@@ -93,3 +93,37 @@ class ZkApiInteraction:
                 "status_code": monthly_status_report.status_code,
                 "description": f'{monthly_status_report.reason} Обратитесь к администратору'
             }
+
+    def get_monthly_punch_report(self, params, user):
+        url = f"{settings.BASE_URL_ZK}{settings.monthly_punch_report_url}"
+        monthly_punch_report = requests.get(
+            url=url,
+            headers=self.headers,
+            params=params,
+        )
+        self.record_in_db(request=monthly_punch_report, user=user)
+        if monthly_punch_report.ok:
+            monthly_status_report = monthly_punch_report.json()
+            return monthly_status_report
+        else:
+            return {
+                "status_code": monthly_punch_report.status_code,
+                "description": f'{monthly_punch_report.reason} Обратитесь к администратору'
+            }
+
+    def emp_search(self, params, user):
+        url = f"{settings.BASE_URL_ZK}{settings.life_search_url}"
+        response = requests.get(
+            url=url,
+            headers=self.headers,
+            params=params,
+        )
+        self.record_in_db(request=response, user=user)
+        if response.ok:
+            response = response.json()
+            return response
+        else:
+            return {
+                "status_code": response.status_code,
+                "description": f'{response.reason} Обратитесь к администратору'
+            }
