@@ -1,48 +1,33 @@
 const today = new Date();
-let code = 0
+let code = 0;
 let search_id = 0;
+let exp_data = '';
 
 
-// async function checkAuthorization() {
-//     let response = await fetch('/protected', {
-//         method: 'GET',
-//         credentials: 'include'  // Отправляем куки с запросом
-//     });
+function checkAuthorization() {
+    fetch('/api/protected/', {
+        method: 'GET',
+        credentials: 'include'  // Отправляем куки с запросом
+    })
+    .then(response =>   {
+        if (response.status === 403) {
+            let a = window.location
+            if(a.pathname != "/") {}
+            else{
+                window.location.href = "auth/login/";  // Перенаправляем на логин
+            }
+        } else {
+            // Пользователь авторизован, продолжаем работу
+            let data = response.json();
+            console.log(data);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    })
+}
 
-//     if (response.status === 401) {
-//         window.location.href = "/login";  // Перенаправляем на логин
-//     } else {
-//         // Пользователь авторизован, продолжаем работу
-//         let data = await response.json();
-//         console.log(data);
-//     }
-// }
-
-// // Выполняем проверку при загрузке страницы
-// checkAuthorization();
-
-
-// document.getElementById('login-form').addEventListener('submit', async function(event) {
-//     event.preventDefault();
-
-//     let username = document.getElementById('username').value;
-//     let password = document.getElementById('password').value;
-
-//     let response = await fetch('/login', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ username, password })
-//     });
-
-//     if (response.ok) {
-//         // Перенаправляем на защищенный маршрут
-//         window.location.href = "/protected";
-//     } else {
-//         alert("Ошибка авторизации");
-//     }
-// });
+checkAuthorization()
 
 // Создание даты для поля "end_time", вычитая один день
 const endDate = new Date(today);
@@ -68,37 +53,51 @@ document.getElementById('end_time').value = formatDate(endDate);
 document.getElementById('start_time').value = formatDate(startDate);
 
 
+function logout() {
+    window.location.replace('/auth/logout/');
+}
+
 
 document.getElementById('search-input').addEventListener('input', function() {
-    const query = this.value;
+    const query = this.value; // Получаем значение из поля ввода
     const resultsContainer = document.getElementById('search-results');
 
     if (query.length > 0) { 
         fetch(`/api/life_search/?employee_icontains=${query}`, {
             credentials: 'include'
         })
-            .then(response => response.json())
-            .then(data => {
-                resultsContainer.innerHTML = ''; // Очищаем предыдущие результаты
+        .then(response => {
+            if (response.status === 403) {
+                alert("Срок сессии истёк")
+                logout(); // Вызов функции logout при статусе 403
+                throw new Error('Unauthorized'); // Останавливаем дальнейшую обработку
+            }
+            return response.json();
+        })
+        .then(data => {
+            resultsContainer.innerHTML = ''; // Очищаем предыдущие результаты
 
-                data.data.forEach(item => {
-                    const div = document.createElement('div');
-                    div.classList.add('search-result');
-                    const span = document.createElement('span');
-                    if (parseInt(item.emp_code) < 10) {
-                        span.textContent = `${item.emp_code}    ${item.first_name}`;
-                    }else if(parseInt(item.emp_code) < 100) {
-                        span.textContent = `${item.emp_code} ${item.first_name}`;
-                    }
-                    div.appendChild(span)
-                    div.addEventListener('click', function() {
-                        document.getElementById('search-input').value = item.first_name; // Заполняем поле ввода выбранным значением
-                        search_id = item.id
-                        resultsContainer.innerHTML = ''; // Очищаем результаты после выбора
-                    });
-                    resultsContainer.appendChild(div);
+            data.data.forEach(item => {
+                const div = document.createElement('div');
+                div.classList.add('search-result');
+                const span = document.createElement('span');
+                if (parseInt(item.emp_code) < 10) {
+                    span.textContent = `${item.emp_code}    ${item.first_name}`;
+                } else if (parseInt(item.emp_code) < 100) {
+                    span.textContent = `${item.emp_code} ${item.first_name}`;
+                }
+                div.appendChild(span);
+                div.addEventListener('click', function() {
+                    document.getElementById('search-input').value = item.first_name; // Заполняем поле ввода выбранным значением
+                    search_id = item.id;
+                    resultsContainer.innerHTML = ''; // Очищаем результаты после выбора
                 });
+                resultsContainer.appendChild(div);
             });
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+        });
     } else {
         resultsContainer.innerHTML = ''; 
         search_id = 0;
@@ -156,41 +155,94 @@ async function progressBarTable(data) {
     await  new Promise(resolve => setTimeout(resolve, 1000));
     tableContainer.innerHTML = ""
 }
-document.getElementById('exportButton').addEventListener('click', function() {
-    window.location.href = '/export/';
-});
-
-document.getElementById('submitCount').addEventListener('click', function() {
-
-
+document.getElementById('exportButton').addEventListener('click', async function() {
+    console.log(exp_data);
     if (code === 0) {
-        code = 1; 
+        code = 1;
+        
         let start_time = document.getElementById("start_time").value;
         let end_time = document.getElementById("end_time").value;
-        let table_clear = document.getElementById("myTable");
-        table_clear.innerHTML = "";
+        let search_input = document.getElementById('search-input').value;
         let params = empReport(start_time, end_time);
         start_time = params["start_time"];
         end_time = params["end_time"];
-        // progressBarTable()
-        fetch(`/calc/${start_time}/${end_time}/`)
-        .then(response => response.json())
-        .then(data => {
-            progressBarTable(data);
-            console.log(data);
+        let url;
+
+        if (search_input) {
+            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&employees=${search_id}&exp_data=true`;
+        } else {
+            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&exp_data=true`;
+        }
+
+        try {
+            // Отправляем запрос на сервер для получения файла
+            let response = await fetch(url, {
+                method: 'GET'
+            });
+
+            if(response.status === 403){
+                alert("Срок сессии истёк")
+                logout()
+            }
+            else if (!response.ok) {
+                throw new Error(`Ошибка HTTP: ${response.status}`);
+                
+            }else{
+
+            // Преобразуем ответ в Blob для загрузки файла
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+
+            // Создаём элемент <a> для скачивания файла
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `${start_time}_${end_time}.xlsx`; // Устанавливаем имя файла
+            document.body.appendChild(a);
+            a.click();
+            
+            // Удаляем элемент и освобождаем URL после загрузки
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+        }} catch (error) {
+            console.error('Ошибка при получении файла:', error);
+        } finally {
+            // Сброс значения code после завершения процесса
             code = 0;
-        })
-        .catch(error => console.error('Ошибка:', error), code = 0);
+        }
+    }
+});
+
+// document.getElementById('submitCount').addEventListener('click', function() {
+
+
+//     if (code === 0) {
+//         code = 1; 
+//         let start_time = document.getElementById("start_time").value;
+//         let end_time = document.getElementById("end_time").value;
+//         let table_clear = document.getElementById("myTable");
+//         table_clear.innerHTML = "";
+//         let params = empReport(start_time, end_time);
+//         start_time = params["start_time"];
+//         end_time = params["end_time"];
+//         // progressBarTable()
+//         fetch(`/calc/${start_time}/${end_time}/`)
+//         .then(response => response.json())
+//         .then(data => {
+//             progressBarTable(data);
+//             console.log(data);
+//             code = 0;
+//         })
+//         .catch(error => console.error('Ошибка:', error), code = 0);
 
 
         
     
-    }else{
-        alert("ЖДИ!!!");
-    }
+//     }else{
+//         alert("ЖДИ!!!");
+//     }
     
 
-});
+// });
 
 function formatTimeCell(cellData, code){
     let parts = cellData.split(' ')
@@ -232,9 +284,9 @@ document.getElementById('formSearch').addEventListener('submit', async function(
         
         let url;
         if (search_input) {
-            url = `/get/emp_report/${start_time}/${end_time}/${search_id}`;
+            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&employees=${search_id}`;
         } else {
-            url = `/get/emp_report/${start_time}/${end_time}`;
+            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}`;
         }
 
         try {
@@ -242,12 +294,19 @@ document.getElementById('formSearch').addEventListener('submit', async function(
             let response = await fetch(url);
 
             // Проверка на успешный статус ответа
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
+            if(response.status === 403){
+                alert("Срок сессии истёк")
+                logout()
             }
+            else if (!response.ok) {
+                throw new Error(`Ошибка HTTP: ${response.status}`);
+                
+            }else{
 
             // Парсим данные как JSON
             const data = await response.json();
+            exp_data = data
+            
             
             let table = document.getElementById('myTable');
             table.innerHTML = '';
@@ -319,7 +378,7 @@ document.getElementById('formSearch').addEventListener('submit', async function(
             });
             code = 0;
 
-        } catch (error) {
+        }} catch (error) {
             console.error('Error:', error);
             code = 0;
             table_clear.innerHTML = `<h1>Ошибка: ${error.message}</h1>`;
@@ -329,7 +388,3 @@ document.getElementById('formSearch').addEventListener('submit', async function(
     }
 });
 
-
-document.getElementById('exportButton').addEventListener('click', function() {
-    window.location.href = '/export/';
-});
