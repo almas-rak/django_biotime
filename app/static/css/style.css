@@ -107,3 +107,16 @@ tr:nth-child(odd) {
     background-color: #34A7FE;
 }
 
+
+.container {
+    overflow: auto;  
+    max-width: 100%;
+    max-height: 75%;   
+    white-space: nowrap;  
+}
+
+#myTable {
+    width: 100%;  
+    max-width: 100%;  
+    table-layout: auto;  
+} 
