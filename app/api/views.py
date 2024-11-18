@@ -213,7 +213,7 @@ def create_header(ws, params):
     end_time = datetime.strptime(params["end_date"], "%Y-%m-%d")
 
     while True:
-        header.append(str(start_time.day))
+        header.append(f'{str(start_time.day)}.{str(start_time.month)}')
         if start_time.date() == end_time.date():  # - datetime.timedelta(days=1):
             break
         start_time += timedelta(days=1)
@@ -292,6 +292,11 @@ def fill_data(ws, data):
 
 class GetEmpReport(APIView):
     permission_classes = (IsAuthenticated,)
+    accs = {
+        "test": "3",
+        "Anatoliy": "8",
+        "au.cvetcov": "5",
+    }
 
     def get(self, request):
         start_date = request.query_params.get("start_date")
@@ -305,7 +310,8 @@ class GetEmpReport(APIView):
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
         if end_date > datetime.now():
             end_date = datetime.now()
-
+        if not request.user.is_staff:
+            employees = self.accs[request.user.username]
         # Проверка разницы между end_time и start_time
         forty_days_ago = end_date - timedelta(days=40)
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
@@ -360,5 +366,16 @@ class GetEmpReport(APIView):
 class Protected(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self):
-        return Response({"Test": "ok"})
+    def get(self, request):
+        return Response({"Test": "ok"}, status=status.HTTP_200_OK)
+
+
+class ManualRecording(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        if request.user.is_superuser:
+            return Response({"message": "Пользователь является суперпользователем."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Недостаточно прав"},
+                            status=status.HTTP_403_FORBIDDEN)
