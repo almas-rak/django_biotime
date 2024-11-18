@@ -18,7 +18,11 @@ function checkAuthorization() {
             }
         } else {
             // Пользователь авторизован, продолжаем работу
-            let data = response.json();
+        return response.json();
+        }
+    })
+    .then(data => {
+        if (data) {
             console.log(data);
         }
     })
@@ -49,60 +53,67 @@ function formatDate(date) {
 }
 
 // Установка значений в поля ввода
-document.getElementById('end_time').value = formatDate(endDate);
-document.getElementById('start_time').value = formatDate(startDate);
+if(window.location.pathname == "/") {
+    document.getElementById('end_time').value = formatDate(endDate);
+    document.getElementById('start_time').value = formatDate(startDate);
+}
+
+
 
 
 function logout() {
     window.location.replace('/auth/logout/');
 }
 
+let search_input = document.getElementById('search-input')
+if(search_input){
 
-document.getElementById('search-input').addEventListener('input', function() {
-    const query = this.value; // Получаем значение из поля ввода
-    const resultsContainer = document.getElementById('search-results');
+    document.getElementById('search-input').addEventListener('input', function() {
+        const query = this.value; // Получаем значение из поля ввода
+        const resultsContainer = document.getElementById('search-results');
 
-    if (query.length > 0) { 
-        fetch(`/api/life_search/?employee_icontains=${query}`, {
-            credentials: 'include'
-        })
-        .then(response => {
-            if (response.status === 403) {
-                alert("Срок сессии истёк")
-                logout(); // Вызов функции logout при статусе 403
-                throw new Error('Unauthorized'); // Останавливаем дальнейшую обработку
-            }
-            return response.json();
-        })
-        .then(data => {
-            resultsContainer.innerHTML = ''; // Очищаем предыдущие результаты
-
-            data.data.forEach(item => {
-                const div = document.createElement('div');
-                div.classList.add('search-result');
-                const span = document.createElement('span');
-                if (parseInt(item.emp_code) < 10) {
-                    span.textContent = `${item.emp_code}    ${item.first_name}`;
-                } else if (parseInt(item.emp_code) < 100) {
-                    span.textContent = `${item.emp_code} ${item.first_name}`;
+        if (query.length > 0) { 
+            fetch(`/api/life_search/?employee_icontains=${query}`, {
+                credentials: 'include'
+            })
+            .then(response => {
+                if (response.status === 403) {
+                    alert("Срок сессии истёк")
+                    logout(); // Вызов функции logout при статусе 403
+                    throw new Error('Unauthorized'); // Останавливаем дальнейшую обработку
                 }
-                div.appendChild(span);
-                div.addEventListener('click', function() {
-                    document.getElementById('search-input').value = item.first_name; // Заполняем поле ввода выбранным значением
-                    search_id = item.id;
-                    resultsContainer.innerHTML = ''; // Очищаем результаты после выбора
+                return response.json();
+            })
+            .then(data => {
+                resultsContainer.innerHTML = ''; // Очищаем предыдущие результаты
+
+                data.data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.classList.add('search-result');
+                    const span = document.createElement('span');
+                    if (parseInt(item.emp_code) < 10) {
+                        span.textContent = `${item.emp_code}    ${item.first_name}`;
+                    } else if (parseInt(item.emp_code) < 100) {
+                        span.textContent = `${item.emp_code} ${item.first_name}`;
+                    }
+                    div.appendChild(span);
+                    div.addEventListener('click', function() {
+                        document.getElementById('search-input').value = item.first_name; // Заполняем поле ввода выбранным значением
+                        search_id = item.id;
+                        resultsContainer.innerHTML = ''; // Очищаем результаты после выбора
+                    });
+                    resultsContainer.appendChild(div);
                 });
-                resultsContainer.appendChild(div);
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
             });
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-        });
-    } else {
-        resultsContainer.innerHTML = ''; 
-        search_id = 0;
-    }
-});
+        } else {
+            resultsContainer.innerHTML = ''; 
+            search_id = 0;
+        }
+    });
+}
 
 function empReport(start_time, end_time) {
     const params = {};
@@ -275,7 +286,10 @@ document.getElementById('formSearch').addEventListener('submit', async function(
         
         let start_time = document.getElementById("start_time").value;
         let end_time = document.getElementById("end_time").value;
-        let search_input = document.getElementById('search-input').value;
+        let search_input = document.getElementById('search-input');
+        if (search_input){
+            search_input = search_input.value
+        }
         let table_clear = document.getElementById("myTable");
         table_clear.innerHTML = "";
         let params = empReport(start_time, end_time);
@@ -324,7 +338,7 @@ document.getElementById('formSearch').addEventListener('submit', async function(
                 if (day < 10){day = `0${day}`;}
                 let month = current_date.getMonth() + 1;
                 if (month < 10){month = `0${month}`}
-                header.push(`${month}.${day}`);
+                header.push(`${day}.${month}`);
                 current_date.setDate(current_date.getDate() + 1);
             }
 
