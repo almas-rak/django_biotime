@@ -52,6 +52,7 @@ class LoginView(TemplateView):
         if token.created < timezone.now() - timedelta(hours=1):
             token.delete()
             token = Token.objects.create(user=user)
+        login(request, user)
         response = HttpResponseRedirect(reverse('index'))
 
         response.set_cookie(
@@ -65,33 +66,56 @@ class LoginView(TemplateView):
         return response
 
 
-def logout_view(request):
-    token_key = request.COOKIES.get('auth_token')
-    if not token_key:
-        return HttpResponseRedirect('/auth/login/')  # Перенаправление при отсутствии токена
+class LogoutView(TemplateView):
 
-    try:
-        token = Token.objects.get(key=token_key)
-        token.delete()  # Удаление токена из базы данных
-    except Token.DoesNotExist:
-        raise AuthenticationFailed('Invalid token')
+    def get(self, request, **kwargs):
+        token_key = request.COOKIES.get('auth_token')
+        if not token_key:
+            return redirect('login')
+        try:
+            token = Token.objects.get(key=token_key)
+            token.delete()  # Удаление токена из базы данных
+        except Token.DoesNotExist:
+            return redirect('login')
+        logout(request)
+        return redirect('login')
 
-    logout(request)  # Завершаем сессию пользователя
 
-    response = HttpResponseRedirect('/auth/login/')
-    response.delete_cookie('auth_token')  # Удаление куки с токеном
-    response.delete_cookie('sessionid')  # Удаление куки с сессионным идентификатором
-
-    return response
+# def logout_view(request):
+#     token_key = request.COOKIES.get('auth_token')
+#     if not token_key:
+#         return HttpResponseRedirect('/auth/login/')  # Перенаправление при отсутствии токена
+#
+#     try:
+#         token = Token.objects.get(key=token_key)
+#         token.delete()  # Удаление токена из базы данных
+#     except Token.DoesNotExist:
+#         raise AuthenticationFailed('Invalid token')
+#
+#     logout(request)
+#
+#     response = HttpResponseRedirect('/auth/login/')
+#     response.delete_cookie('auth_token')  # Удаление куки с токеном
+#     response.delete_cookie('sessionid')  # Удаление куки с сессионным идентификатором
+#
+#     return response
 
 
 class ChangePasswordView(LoginRequiredMixin, TemplateView):
     template_name = "form_base.html"
     form_class = PasswordChangeForm
 
-    def get(self, request, *args, **kwargs):
-        form = self.form_class()
-        return self.render_to_response({'form': form})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = self.form_class()
+        context['class'] = "btn btn-danger"
+        context['btn'] = "Сменить пароль"
+        context['title'] = "Смена пароля"
+        return context
+
+    # def get(self, request, *args, **kwargs):
+    #     form = self.form_class()
+    #     return self.render_to_response({'form': form})
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
@@ -108,7 +132,12 @@ class ChangePasswordView(LoginRequiredMixin, TemplateView):
                 messages.success(request, "Пароль успешно изменен.")
                 return redirect('index')  # Перенаправление на главную страницу
 
-        return self.render_to_response({'form': form})
+        return self.render_to_response({
+            'form': form,
+            'class': "btn btn-danger",
+            'btn': "Сменить пароль",
+            'title': "Смена пароля",
+        })
 
 
 class RegisterView(TemplateView):
