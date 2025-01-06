@@ -178,6 +178,36 @@ tr:nth-child(odd) {
     table-layout: auto;  
 } 
 
+/* Стили для сообщений */
+p.success, p.warning, p.error {
+    max-width: 600px;
+    text-align: center;
+    margin: 0 auto 20px auto; /* Центрируем и добавляем отступ снизу */
+    padding: 10px;
+    font-weight: bold;
+}
+
+/* Стили для ошибок формы */
+ul.errorlist {
+    list-style: none;
+    padding: 10px;
+    margin: 0 0 20px 0;
+    color: white;
+    background-color: #d65f5f;
+    border: 3px solid #970a0a;
+    border-radius: 15px;
+    font-weight: bold;
+}
+
+ul.errorlist li {
+    margin-bottom: 5px;
+}
+
+/* Для consistency (если кнопка перекрывается) */
+button {
+    margin-top: 10px;
+}
+
 .test_color{
     background-color: #00B050;
     color: #A25555;
@@ -204,3 +234,6 @@ tr:nth-child(odd) {
 .dropdown-menu {
     z-index: 1050; /* Обеспечиваем перекрытие sticky-top */
 }
+
+/* test */
+

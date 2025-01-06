@@ -320,82 +320,85 @@ document.getElementById('formSearch').addEventListener('submit', async function(
             // Парсим данные как JSON
             const data = await response.json();
             exp_data = data
-            
-            
             let table = document.getElementById('myTable');
             table.innerHTML = '';
-            
-            // Создание заголовков таблицы
-            const thead = table.createTHead();
-            const headerRow = thead.insertRow();
-            const header = ["ИМЯ"];
-            let current_date = new Date(start_time);
-            const end_date = new Date(end_time);
-            thead.classList.add("sticky-top");
+            if(data.status_code){
+                table_clear.innerHTML = `<h1>Ошибка: ${data.status_code} ${data.description}</h1>`;
+            }else{
+                // Создание заголовков таблицы
+                const thead = table.createTHead();
+                const headerRow = thead.insertRow();
+                const header = ["ИМЯ"];
+                let current_date = new Date(start_time);
+                const end_date = new Date(end_time);
+                thead.classList.add("sticky-top");
+    
+                while (current_date <= end_date) {
+                    let day = current_date.getDate();
+                    if (day < 10){day = `0${day}`;}
+                    let month = current_date.getMonth() + 1;
+                    if (month < 10){month = `0${month}`}
+                    header.push(`${day}.${month}`);
+                    current_date.setDate(current_date.getDate() + 1);
+                }
+    
+                const LIST_HEADERS = ["Обычный", "Опоздание", "Уход раньше", "Нарушения", "Неявка"];
+                header.push(...LIST_HEADERS);
+    
+                header.forEach(headerText => {
+                    const cell = headerRow.insertCell();
+                    cell.textContent = headerText;
+                    cell.style.fontWeight = "bold";
+                    cell.style.backgroundColor = "#4F81BD";
+                    cell.style.color = "#FFFFFF";
+                    cell.style.textAlign = "center";
+                    cell.style.border = "1px solid black";
+                    cell.classList.add("sticky-top");
+                });
+    
+                // Создаем tbody
+                const tbody = table.createTBody();
+    
+                // Заполнение данных таблицы
+                data.forEach(rowData => {
+                    const row = tbody.insertRow();
+    
+                    rowData.forEach(cellData => {
+                        const cell = row.insertCell();
+                        cell.textContent = cellData;
+    
+                        if (cellData === 'Н') {
+                            cell.classList.add('highlight-red');
+                        } else if (cellData.includes(' - Н')) {
+                            cell.classList.add('highlight-yellow');
+                        } else if (cellData.includes('#E535FD') && cellData.includes('#34A7FE')) {
+                            let response = formatTimeCell(cellData, code=3)
+                            cell.textContent = response.time
+                            cell.classList.add('highlight-gradient-blue');
+                        }else if (cellData.includes('#E535FD')) {
+                            let response = formatTimeCell(cellData, code=1)
+                            cell.textContent = response.time;
+                            cell.classList.add('highlight-purple');
+                        }else if (cellData.includes('#34A7FE')) {
+                            let response = formatTimeCell(cellData, code=2)
+                            cell.textContent = response.time
+                            cell.classList.add('highlight-blue');
+                        }else if (cellData.includes("#002060")) {
+                            let response = formatTimeCell(cellData, code=1)
+                            cell.textContent = response.time;
+                            cell.classList.add('highlight-siny');
+                    };
+                    })
+                });
 
-            while (current_date <= end_date) {
-                let day = current_date.getDate();
-                if (day < 10){day = `0${day}`;}
-                let month = current_date.getMonth() + 1;
-                if (month < 10){month = `0${month}`}
-                header.push(`${day}.${month}`);
-                current_date.setDate(current_date.getDate() + 1);
             }
-
-            const LIST_HEADERS = ["Обычный", "Опоздание", "Уход раньше", "Нарушения", "Неявка"];
-            header.push(...LIST_HEADERS);
-
-            header.forEach(headerText => {
-                const cell = headerRow.insertCell();
-                cell.textContent = headerText;
-                cell.style.fontWeight = "bold";
-                cell.style.backgroundColor = "#4F81BD";
-                cell.style.color = "#FFFFFF";
-                cell.style.textAlign = "center";
-                cell.style.border = "1px solid black";
-                cell.classList.add("sticky-top");
-            });
-
-            // Создаем tbody
-            const tbody = table.createTBody();
-
-            // Заполнение данных таблицы
-            data.forEach(rowData => {
-                const row = tbody.insertRow();
-
-                rowData.forEach(cellData => {
-                    const cell = row.insertCell();
-                    cell.textContent = cellData;
-
-                    if (cellData === 'Н') {
-                        cell.classList.add('highlight-red');
-                    } else if (cellData.includes(' - Н')) {
-                        cell.classList.add('highlight-yellow');
-                    } else if (cellData.includes('#E535FD') && cellData.includes('#34A7FE')) {
-                        let response = formatTimeCell(cellData, code=3)
-                        cell.textContent = response.time
-                        cell.classList.add('highlight-gradient-blue');
-                    }else if (cellData.includes('#E535FD')) {
-                        let response = formatTimeCell(cellData, code=1)
-                        cell.textContent = response.time;
-                        cell.classList.add('highlight-purple');
-                    }else if (cellData.includes('#34A7FE')) {
-                        let response = formatTimeCell(cellData, code=2)
-                        cell.textContent = response.time
-                        cell.classList.add('highlight-blue');
-                    }else if (cellData.includes("#002060")) {
-                        let response = formatTimeCell(cellData, code=1)
-                        cell.textContent = response.time;
-                        cell.classList.add('highlight-siny');
-                };
-                })
-            });
+            
             code = 0;
 
         }} catch (error) {
             console.error('Error:', error);
             code = 0;
-            table_clear.innerHTML = `<h1>Ошибка: ${error.message}</h1>`;
+            table_clear.innerHTML = `<h1>Ошибка: ${error.message} Обратитесь к администратору</h1>`;
         }
     } else {
         alert("ЖДИ!!!");
