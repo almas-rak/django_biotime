@@ -52,7 +52,8 @@ class ZkApiInteraction:
         if response.ok:
             return
         else:
-            self.login_zk(token=self.token)
+            self.token = self.login_zk(token=self.token)
+            return
 
     def record_in_db(self, request, user):
         ZkRequest.objects.create(
