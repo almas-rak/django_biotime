@@ -1,3 +1,7 @@
 from django.test import TestCase
+from zk_services.models import ZkRequest, ZkToken
 
-# Create your tests here.
+
+# class ZkRequestTestCase(TestCase):
+#     def test_create_zk_request(self):
+#         obj = ZkRequest.objects.create
