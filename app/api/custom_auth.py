@@ -2,6 +2,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
+from django.contrib.auth import logout
 from datetime import timedelta
 
 
@@ -18,6 +19,7 @@ class TokenFromCookieAuthentication(BaseAuthentication):
 
         if token.created < timezone.now() - timedelta(hours=1):
             token.delete()
+            logout(request)
             raise AuthenticationFailed('Token has expired')
 
         return (token.user, token)
