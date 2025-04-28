@@ -7,14 +7,17 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        {% if user.is_staff %}
         <li class="nav-item nav-link"><button class="btn btn-outline-success" id="exportButton">Экспорт в Excel</button></li>
+        {% endif %}
         {% if user.is_authenticated %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <button class="btn btn-outline-success" id="">{{ user.username }}</button>
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">История запросов</a></li>
+              {% comment %} <li><a class="dropdown-item" href="#">История запросов</a></li> {% endcomment %}
+              <li><a class="dropdown-item" href="#" id="changeTokenLifeBtn">Срок авторизации</a></li>
               <li><a class="dropdown-item" href="{% url 'change_password' %}">Сменить пароль</a></li>
               <li><a class="dropdown-item link-danger" href="{% url 'logout' %}">Выйти</a></li>
             </ul>

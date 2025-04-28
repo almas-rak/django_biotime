@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 
 from accounts.forms import LoginForm, PasswordChangeForm, RegisterForm
+from api.models import TokenLife
 
 
 class LoginView(TemplateView):
@@ -52,6 +53,12 @@ class LoginView(TemplateView):
         if token.created < timezone.now() - timedelta(hours=1):
             token.delete()
             token = Token.objects.create(user=user)
+
+            token_life = TokenLife.objects.filter(user_pk=user).first()
+            if token_life:
+                token_life.created_at = timezone.now()
+                token_life.save()
+
         login(request, user)
         response = HttpResponseRedirect(reverse('index'))
 
@@ -104,6 +111,29 @@ class LogoutView(TemplateView):
 class ChangePasswordView(LoginRequiredMixin, TemplateView):
     template_name = "form_base.html"
     form_class = PasswordChangeForm
+
+    def dispatch(self, request, *args, **kwargs):
+        token_key = request.COOKIES.get('auth_token')
+        if not token_key:
+            return redirect('login')
+
+        try:
+            token = Token.objects.get(key=token_key)
+        except Token.DoesNotExist:
+            logout(request)
+            return redirect('login')
+
+        try:
+            token_lifetime = TokenLife.objects.get(user_pk_id=token.user_id).limit_life
+        except TokenLife.DoesNotExist:
+            token_lifetime = 240  # Дефолтное значение
+
+        if token.created < timezone.now() - timedelta(minutes=token_lifetime):
+            token.delete()
+            logout(request)
+            return redirect('login')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

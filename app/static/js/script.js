@@ -35,10 +35,10 @@ checkAuthorization()
 
 // Создание даты для поля "end_time", вычитая один день
 const endDate = new Date(today);
-endDate.setDate(endDate.getDate() - 1);
+endDate.setDate(endDate.getDate());
 
 // Создание даты для поля "start_time" (первый день текущего месяца)
-const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 20);
 
 // Форматирование даты в строку формата 'YYYY-MM-DD'
 function formatDate(date) {
@@ -166,63 +166,66 @@ async function progressBarTable(data) {
     await  new Promise(resolve => setTimeout(resolve, 1000));
     tableContainer.innerHTML = ""
 }
-document.getElementById('exportButton').addEventListener('click', async function() {
-    console.log(exp_data);
-    if (code === 0) {
-        code = 1;
-        
-        let start_time = document.getElementById("start_time").value;
-        let end_time = document.getElementById("end_time").value;
-        let search_input = document.getElementById('search-input').value;
-        let params = empReport(start_time, end_time);
-        start_time = params["start_time"];
-        end_time = params["end_time"];
-        let url;
 
-        if (search_input) {
-            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&employees=${search_id}&exp_data=true`;
-        } else {
-            url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&exp_data=true`;
-        }
-
-        try {
-            // Отправляем запрос на сервер для получения файла
-            let response = await fetch(url, {
-                method: 'GET'
-            });
-
-            if(response.status === 403){
-                alert("Срок сессии истёк")
-                logout()
-            }
-            else if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
-                
-            }else{
-
-            // Преобразуем ответ в Blob для загрузки файла
-            const blob = await response.blob();
-            const downloadUrl = URL.createObjectURL(blob);
-
-            // Создаём элемент <a> для скачивания файла
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = `${start_time}_${end_time}.xlsx`; // Устанавливаем имя файла
-            document.body.appendChild(a);
-            a.click();
+const exportButton = document.getElementById('exportButton'); 
+if(exportButton){
+    document.getElementById('exportButton').addEventListener('click', async function() {
+        console.log(exp_data);
+        if (code === 0) {
+            code = 1;
             
-            // Удаляем элемент и освобождаем URL после загрузки
-            a.remove();
-            URL.revokeObjectURL(downloadUrl);
-        }} catch (error) {
-            console.error('Ошибка при получении файла:', error);
-        } finally {
-            // Сброс значения code после завершения процесса
-            code = 0;
-        }
-    }
-});
+            let start_time = document.getElementById("start_time").value;
+            let end_time = document.getElementById("end_time").value;
+            let search_input = document.getElementById('search-input').value;
+            let params = empReport(start_time, end_time);
+            start_time = params["start_time"];
+            end_time = params["end_time"];
+            let url;
 
+            if (search_input) {
+                url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&employees=${search_id}&exp_data=true`;
+            } else {
+                url = `/api/get_emp_report/?start_date=${start_time}&end_date=${end_time}&exp_data=true`;
+            }
+
+            try {
+                // Отправляем запрос на сервер для получения файла
+                let response = await fetch(url, {
+                    method: 'GET'
+                });
+
+                if(response.status === 403){
+                    alert("Срок сессии истёк")
+                    logout()
+                }
+                else if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                    
+                }else{
+
+                // Преобразуем ответ в Blob для загрузки файла
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+
+                // Создаём элемент <a> для скачивания файла
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `${start_time}_${end_time}.xlsx`; // Устанавливаем имя файла
+                document.body.appendChild(a);
+                a.click();
+                
+                // Удаляем элемент и освобождаем URL после загрузки
+                a.remove();
+                URL.revokeObjectURL(downloadUrl);
+            }} catch (error) {
+                console.error('Ошибка при получении файла:', error);
+            } finally {
+                // Сброс значения code после завершения процесса
+                code = 0;
+            }
+        }
+    });
+}
 // document.getElementById('submitCount').addEventListener('click', function() {
 
 
@@ -404,4 +407,77 @@ document.getElementById('formSearch').addEventListener('submit', async function(
         alert("ЖДИ!!!");
     }
 });
+
+function formatDateLife(dateString) {
+    let date = new Date(dateString);
+    return date.toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    let changeTokenLifeBtn = document.getElementById("changeTokenLifeBtn");
+    let createdAt;
+    let tokenLifetime;
+
+    fetch("/api/change_token_life/", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        createdAt = new Date(data.created_at);
+        tokenLifetime = data.token_lifetime;
+
+        if (changeTokenLifeBtn) {
+            changeTokenLifeBtn.addEventListener("click", function () {
+                let now = new Date();
+                let expiresInMinutes = Math.max(0, Math.floor((createdAt.getTime() + tokenLifetime * 60000 - now.getTime()) / 60000));
+
+                let newLifetime = prompt(`Создан: ${formatDateLife(createdAt)} \nСрок: ${tokenLifetime} минут \nОсталось ${expiresInMinutes} минут.\nВведите новый срок жизни токена (в минутах):`);
+
+                if (!newLifetime) return; // Если нажали "Отмена" или пустая строка
+
+                newLifetime = parseInt(newLifetime, 10);
+                if (isNaN(newLifetime) || newLifetime <= 0 || newLifetime > 525960) {
+                    alert("Ошибка: Введите число от 1 до 525960.");
+                    return;
+                }
+
+                fetch("/api/change_token_life/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Token " + getAuthToken() // Получаем токен из куков
+                    },
+                    body: JSON.stringify({ token_lifetime: newLifetime })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert("Ошибка: " + data.error);
+                    } else {
+                        alert("Срок жизни токена обновлён: " + data.token_lifetime + " минут.");
+                        // Обновляем переменные после изменения токена
+                        createdAt = new Date();
+                        tokenLifetime = newLifetime;
+                    }
+                })
+                .catch(error => console.error("Ошибка:", error));
+            });
+        }
+    })
+    .catch(error => console.error("Ошибка загрузки данных о токене:", error));
+
+    function getAuthToken() {
+        return document.cookie.split("; ").find(row => row.startsWith("auth_token="))?.split("=")[1] || "";
+    }
+});
+
 

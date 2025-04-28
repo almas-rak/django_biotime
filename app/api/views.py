@@ -1,7 +1,9 @@
 import re
 
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +14,7 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 
+from .models import TokenLife
 from zk_services.views import ZkApiInteraction
 
 
@@ -112,7 +115,7 @@ def timedelta_hours_minutes_str(tot_time):
     return f"{hours}:{minutes:02d}"
 
 
-def pars_data(status_report, punch_report):
+def pars_data(status_report, punch_report, holidays):
     data = []
     updated_punch_report = []
     index_report = 0
@@ -213,7 +216,15 @@ def create_header(ws, params):
     end_time = datetime.strptime(params["end_date"], "%Y-%m-%d")
 
     while True:
-        header.append(f'{str(start_time.day)}.{str(start_time.month)}')
+        if start_time.day < 10:
+            day = f'0{str(start_time.day)}'
+        else:
+            day = str(start_time.day)
+        if start_time.month < 10:
+            month = f'0{str(start_time.month)}'
+        else:
+            month = str(start_time.month)
+        header.append(f'{day}.{month}')
         if start_time.date() == end_time.date():  # - datetime.timedelta(days=1):
             break
         start_time += timedelta(days=1)
@@ -340,8 +351,9 @@ class GetEmpReport(APIView):
             punch_report = punch_report["data"]
             status_report = zk_api_interaction.get_monthly_status_report(params=params, user=request.user)
             status_report = status_report["data"]
+            holidays_report = zk_api_interaction.get_holidays(user=request.user)
 
-            data = pars_data(status_report=status_report, punch_report=punch_report)
+            data = pars_data(status_report=status_report, punch_report=punch_report, holidays=holidays_report)
             if export:
                 wb = openpyxl.Workbook()
                 ws = wb.active
@@ -379,3 +391,32 @@ class ManualRecording(APIView):
         else:
             return Response({"message": "Недостаточно прав"},
                             status=status.HTTP_403_FORBIDDEN)
+
+
+class ChangeTokenLife(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        token_life = get_object_or_404(TokenLife, user_pk=request.user)
+        token_key = request.COOKIES.get('auth_token')
+        token = Token.objects.get(key=token_key)
+        return Response({"created_at": token.created, "token_lifetime": token_life.limit_life},
+                        status=status.HTTP_200_OK)
+
+    def post(self, request):
+        new_lifetime = request.data.get("token_lifetime")
+        try:
+            new_lifetime = int(new_lifetime)
+        except ValueError:
+            return Response({"error": "только числа больше нуля"}, status=status.HTTP_400_BAD_REQUEST)
+        if not new_lifetime or new_lifetime <= 0 or new_lifetime > 525960:
+            return Response({"error": "только числа больше нуля и меньше 525960(1 год)"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        token_life, created = TokenLife.objects.update_or_create(
+            user_pk_id=request.user.id,
+            defaults={"limit_life": new_lifetime}
+        )
+
+        return Response({"message": "Token lifetime updated", "token_lifetime": token_life.limit_life},
+                        status=status.HTTP_200_OK)

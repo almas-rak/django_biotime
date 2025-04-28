@@ -30,6 +30,7 @@ login_url = os.getenv("login_url")
 monthly_status_report_url = os.getenv("monthly_status_report_url")
 monthly_punch_report_url = os.getenv("monthly_punch_report_url")
 life_search_url = os.getenv("life_search_url")
+holidays_url = os.getenv("holidays")
 
 # print(DB_HOST, DB_USER, DB_NAME, DB_PASS, DB_PORT)
 
@@ -145,7 +146,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = "Asia/Almaty"
+TIME_ZONE = 	'Asia/Yekaterinburg'
 
 USE_I18N = True
 

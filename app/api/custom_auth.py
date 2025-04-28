@@ -4,6 +4,7 @@ from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.contrib.auth import logout
 from datetime import timedelta
+from .models import TokenLife
 
 
 class TokenFromCookieAuthentication(BaseAuthentication):
@@ -17,7 +18,12 @@ class TokenFromCookieAuthentication(BaseAuthentication):
         except Token.DoesNotExist:
             raise AuthenticationFailed('Invalid token')
 
-        if token.created < timezone.now() - timedelta(hours=1):
+        try:
+            token_lifetime = TokenLife.objects.get(user_pk_id=token.user_id).limit_life
+        except TokenLife.DoesNotExist:
+            token_lifetime = 240  # Дефолтное значение
+
+        if token.created < timezone.now() - timedelta(minutes=token_lifetime):
             token.delete()
             logout(request)
             raise AuthenticationFailed('Token has expired')

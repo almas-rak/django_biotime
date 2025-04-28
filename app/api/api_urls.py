@@ -11,4 +11,5 @@ urlpatterns = [
     path('life_search/', views.EmpSearch.as_view(), name='life_search'),
     path('get_emp_report/', views.GetEmpReport.as_view(), name='get_emp_report'),
     path('protected/', views.Protected.as_view(), name='protected'),
+    path('change_token_life/', views.ChangeTokenLife.as_view(), name="change_token_life")
 ]
